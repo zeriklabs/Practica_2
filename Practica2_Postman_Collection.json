@@ -1,0 +1,706 @@
+{
+	"info": {
+		"_postman_id": "c61b6bb8-7ad5-4a64-b695-037b51b3a1a2",
+		"name": "Práctica 2 - REST Nivel 3 Richardson con JWT",
+		"description": "Colección completa de pruebas para la Práctica Integradora. Implementa las 12 pruebas obligatorias especificadas en la rúbrica.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8080",
+			"type": "string"
+		},
+		{
+			"key": "token_admin",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "token_consulta",
+			"value": "",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "01. Autenticación",
+			"item": [
+				{
+					"name": "Prueba 1: Login correcto ADMIN (Obtener JWT)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code es 200 OK\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"Token JWT recibido y almacenado\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.token).to.be.a('string');",
+									"    pm.expect(jsonData.rol).to.eql(\"ROLE_ADMIN\");",
+									"    pm.collectionVariables.set(\"token_admin\", jsonData.token);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"admin\",\n    \"password\": \"admin123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
+						}
+					}
+				},
+				{
+					"name": "Prueba 1b: Login correcto CONSULTA (Obtener JWT)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code es 200 OK\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"Token JWT CONSULTA recibido\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.token).to.be.a('string');",
+									"    pm.expect(jsonData.rol).to.eql(\"ROLE_CONSULTA\");",
+									"    pm.collectionVariables.set(\"token_consulta\", jsonData.token);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"consulta\",\n    \"password\": \"consulta123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
+						}
+					}
+				},
+				{
+					"name": "Prueba 2: Login con contraseña incorrecta (401)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code es 401 Unauthorized\", function () {",
+									"    pm.response.to.have.status(401);",
+									"});",
+									"pm.test(\"Mensaje de rechazo de autenticación\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.status).to.eql(401);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"admin\",\n    \"password\": \"password_erronea_xyz\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
+						}
+					}
+				},
+				{
+					"name": "Registro público de nuevo usuario",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"nuevo_entrenador\",\n    \"password\": \"clave123456\",\n    \"nombreCompleto\": \"Juan Carlos Plata\",\n    \"email\": \"jcplata@deportes.com\",\n    \"rol\": \"ROLE_CONSULTA\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/registro",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"registro"
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "02. Seguridad y Control de Acceso (JWT)",
+			"item": [
+				{
+					"name": "Prueba 3: Consultar recurso sin token (401)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Rechazo por falta de token (401 Unauthorized)\", function () {",
+									"    pm.response.to.have.status(401);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/entrenadores",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"entrenadores"
+							]
+						}
+					}
+				},
+				{
+					"name": "Prueba 4: Consultar recurso con token válido (200)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code es 200 OK\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"Contiene enlaces HATEOAS\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData._links).to.have.property('self');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token_consulta}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/entrenadores",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"entrenadores"
+							]
+						}
+					}
+				},
+				{
+					"name": "Prueba 5: Enviar token manipulado o expirado (401)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Rechazo de token inválido (401)\", function () {",
+									"    pm.response.to.have.status(401);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.tokenManipuladoInvalido.firmaFalsa",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/entrenadores",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"entrenadores"
+							]
+						}
+					}
+				},
+				{
+					"name": "Prueba 6: Registrar recurso con rol ADMIN (201 Created)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code es 201 Created\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"pm.test(\"Cabecera Location presente\", function () {",
+									"    pm.response.to.have.header(\"Location\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token_admin}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"nombre\": \"Alejandro\",\n    \"apellido\": \"Sosa\",\n    \"especialidad\": \"Triatlón\",\n    \"experienciaAnios\": 9,\n    \"email\": \"alejandro.sosa@deportes.com\",\n    \"telefono\": \"+52 5577665544\",\n    \"estado\": \"ACTIVO\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/entrenadores",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"entrenadores"
+							]
+						}
+					}
+				},
+				{
+					"name": "Prueba 7: Registrar recurso con rol CONSULTA (403 Forbidden)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Acceso denegado a rol CONSULTA (403 Forbidden)\", function () {",
+									"    pm.response.to.have.status(403);",
+									"});",
+									"pm.test(\"Mensaje de autorización denegada\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.status).to.eql(403);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token_consulta}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"nombre\": \"NoAutorizado\",\n    \"apellido\": \"Usuario\",\n    \"especialidad\": \"Pesas\",\n    \"experienciaAnios\": 3,\n    \"email\": \"sin.permiso@deportes.com\",\n    \"telefono\": \"+52 5511223344\",\n    \"estado\": \"ACTIVO\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/entrenadores",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"entrenadores"
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "03. HATEOAS (Nivel 3 Richardson)",
+			"item": [
+				{
+					"name": "Prueba 8: Consultar recurso individual (Incluye _links HATEOAS)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status 200 OK\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"Verificación de enlaces HATEOAS\", function () {",
+									"    var data = pm.response.json();",
+									"    pm.expect(data._links).to.have.property('self');",
+									"    pm.expect(data._links).to.have.property('entrenadores');",
+									"    pm.expect(data._links).to.have.property('actualizar');",
+									"    pm.expect(data._links).to.have.property('eliminar');",
+									"    pm.expect(data._links).to.have.property('atletas');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token_consulta}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/entrenadores/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"entrenadores",
+								"1"
+							]
+						}
+					}
+				},
+				{
+					"name": "Prueba 9: Navegar a atletas a partir del enlace descubierto en Entrenador",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Navegación exitosa a atletas (200 OK)\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"Atletas contienen enlaces inversos a su entrenador\", function () {",
+									"    var data = pm.response.json();",
+									"    pm.expect(data._embedded.atletas[0]._links).to.have.property('entrenador');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token_consulta}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/entrenadores/1/atletas",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"entrenadores",
+								"1",
+								"atletas"
+							]
+						}
+					}
+				},
+				{
+					"name": "Prueba 10: Enlaces dinámicos según estado (Recurso INACTIVO muestra enlace activar)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status 200 OK\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"Entrenador INACTIVO contiene enlace para 'activar'\", function () {",
+									"    var data = pm.response.json();",
+									"    pm.expect(data.estado).to.eql(\"INACTIVO\");",
+									"    pm.expect(data._links).to.have.property('activar');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token_consulta}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/entrenadores/2",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"entrenadores",
+								"2"
+							]
+						}
+					}
+				},
+				{
+					"name": "Búsqueda con parámetros (Filtro por nombre)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token_consulta}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/entrenadores/buscar?nombre=Carlos",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"entrenadores",
+								"buscar"
+							],
+							"query": [
+								{
+									"key": "nombre",
+									"value": "Carlos"
+								}
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "04. Manejo de Errores y Validaciones",
+			"item": [
+				{
+					"name": "Prueba 11: Consultar identificador inexistente (404 Not Found)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code es 404 Not Found\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									"pm.test(\"Cuerpo de error contiene mensaje descriptivo\", function () {",
+									"    var data = pm.response.json();",
+									"    pm.expect(data.status).to.eql(404);",
+									"    pm.expect(data.error).to.eql(\"Not Found\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token_consulta}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/entrenadores/999999",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"entrenadores",
+								"999999"
+							]
+						}
+					}
+				},
+				{
+					"name": "Prueba 12: Enviar datos inválidos al registrar (400 Bad Request)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code es 400 Bad Request\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"pm.test(\"Detalles de validación de campos incluidos\", function () {",
+									"    var data = pm.response.json();",
+									"    pm.expect(data.details).to.have.property('nombre');",
+									"    pm.expect(data.details).to.have.property('email');",
+									"    pm.expect(data.details).to.have.property('experienciaAnios');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token_admin}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"nombre\": \"\",\n    \"apellido\": \"\",\n    \"especialidad\": \"\",\n    \"experienciaAnios\": -5,\n    \"email\": \"correo_invalido_sin_arroba\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/entrenadores",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"entrenadores"
+							]
+						}
+					}
+				}
+			]
+		}
+	]
+}
+
